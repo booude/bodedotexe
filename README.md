@@ -1,4 +1,4 @@
-# Twitch Count Bot 
+# BodeDotEXE (Twitch Chat Bot)
 
 Simple Twitch bot template with three commands:
 
