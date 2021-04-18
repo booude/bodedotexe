@@ -1,18 +1,4 @@
 # BodeDotEXE (Twitch Chat Bot)
-
-Simple Twitch bot template with three commands:
-
- * `!count`: shows the `count` from [`data.json`](./data.json)
- * `!add NUMBER`: adds `NUMBER` to `count` in  [`data.json`](./data.json)
- * `!sub NUMBER`: subtracts `NUMBER` from `count` in  [`data.json`](./data.json)
-
-## Setup Video
-<a href="https://youtu.be/CPVSoowZhVw">
-    <img src="./images/youtube_thumbnail.png" width="500"/>
-</a>
-
-[Youtube Video Link](https://youtu.be/CPVSoowZhVw)
-
 ## Setup and Run
 
 Requires Python `3.7.3`.
@@ -32,13 +18,14 @@ cp .env.sample .env
 
 Open `.env` and insert the following fields:
 
-| Field        | Explanation                                                           |
-|--------------|-----------------------------------------------------------------------|
-| `TMI_TOKEN`  | OAuth Token with `oauth:` as a prefix                                 |
-| `CLIENT_ID`  | Client ID obtained from Twitch's Developer site                       |
-| `BOT_NICK`   | Twitch name of the Bot                                                | 
-| `BOT_PREFIX` | Prefix for commands the bot should listen to (set to `!` per default) |
-| `CHANNEL`    | The name of the your Twitch channel you want the bot to run at        |
+| Field          | Explanation                                                           |
+|----------------|-----------------------------------------------------------------------|
+| `TMI_TOKEN`    | OAuth Token with `oauth:` as a prefix                                 |
+| `CLIENT_ID`    | Client ID obtained from Twitch's Developer site                       |
+| `CLIENT_SECRET`| Client SECRET obtained from Twitch's Developer site                   |
+| `BOT_NICK`     | Twitch name of the Bot                                                | 
+| `BOT_PREFIX`   | Prefix for commands the bot should listen to (set to `!` per default) |
+| `CHANNEL`      | The name of the your Twitch channel you want the bot to run at        |
 
 Start Bot:
 
@@ -91,12 +78,3 @@ Check if the output of the bot if an error occurs:
 ```
 sudo systemctl enable twitch_count_bot.service
 ```
-
-## Credits
-![K0nze Logo](./images/k_logo_30x30.png "Logo") Created by Konstantin (Konze) Lübeck
-
- * Discord: [discord.k0nze.gg](https://discord.k0nze.gg) 
- * Twitch: [twitch.tv/k0nze](https://twitch.tv/k0nze) 
- * Youtube: [youtube.com/k0nze](https://youtube.com/k0nze) 
- * Twitter: [twitter.com/k0nze_gg](https://twitter.com/k0nze_gg) 
- * Instagram: [instagram.com/k0nze.gg](https://instagram.com/k0nze.gg) 

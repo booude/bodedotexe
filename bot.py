@@ -1,5 +1,6 @@
 import os
 import json
+import unidecode
 
 from pathlib import Path
 from dotenv import load_dotenv
@@ -46,28 +47,6 @@ async def event_message(ctx):
         return
     await bot.handle_commands(ctx)
 
-@bot.command(name='elo')
-async def count_command(ctx):
-    count = get_count()
-    await ctx.send_me(f'Elo: Diamante 4 ({count} LP )')
-
-
-@bot.command(name='add')
-async def command_add(ctx):
-    if(ctx.author.is_mod) or (ctx.author == CHANNEL):
-
-        command_string = ctx.content
-        command_string = command_string.replace('!add', '').strip()
-        value = 0
-        try:
-            value = int(command_string)
-        except ValueError:
-            value = 0
-        count = get_count()
-        count = count + value
-        update_count(count)
-        await ctx.send(f'Doritos mudou pra {count}')
-'''
 @bot.event
 async def event_message(ctx):
 
@@ -83,52 +62,28 @@ async def event_message(ctx):
                 new = message.split()[0]
                 if new == 'novo':
                     cmd = message.split()[1]
+                    cmd2 = unidecode.unidecode(cmd.lower())
                     dsc = message.replace(f'novo {cmd}','').strip()
-                    data={cmd: dsc}
+                    data={cmd2: dsc}
                     add_command(data)
                     await ctx.channel.send_me(f'{ctx.author.name} -> Comando criado/editado com sucesso :D')
                     return
         else:
-            msg = get_command(cmd)
+            msg = get_command(cmd.lower())
             await ctx.channel.send_me(f"{ctx.author.name} -> {msg}")
         return
-
-
- @bot.command(name='chat')
- async def get_chatters(ctx):
-     chatters = await client.get_chatters(CHANNEL)
-     all_chatters = ' '.join(chatters.all)
-     await ctx.send_me(f"{ctx.author.name} -> no chat: {all_chatters}")'''
-
-
-def get_count():
-    with open(JSON_FILE) as json_file:
-        data = json.load(json_file)
-        return data['elo']
-
-
-def update_count(count):
-    data = None
-    with open(JSON_FILE) as json_file:
-        data = json.load(json_file)
-    if data is not None:
-        data['elo'] = count
-    with open(JSON_FILE, 'w') as json_file:
-        json.dump(data, json_file, sort_keys=True, indent=4)
-
 
 def get_command(cmd):
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
-        return command[cmd]
+        return command[unidecode.unidecode(cmd)]
 
 def add_command(data):
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
         command.update(data)
-    with open(COMMAND_FILE, 'w') as json_file:
-        json.dump(command, json_file)
+    with open(COMMAND_FILE, 'w', encoding='utf-8') as json_file:
+        json.dump(command, json_file,ensure_ascii=False,indent=4,sort_keys=True)
 
 if __name__ == "__main__":
-    # launch bot
     bot.run()
