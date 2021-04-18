@@ -19,7 +19,6 @@ BOT_PREFIX = os.environ.get('BOT_PREFIX')
 CHANNEL = os.environ.get('CHANNEL')
 CLIENT_SECRET = os.environ.get('CLIENT_SECRET')
 
-JSON_FILE = str(os.path.dirname(os.path.realpath(__file__))) + '/data.json'
 COMMAND_FILE = str(os.path.dirname(
     os.path.realpath(__file__))) + '/commands.json'
 
