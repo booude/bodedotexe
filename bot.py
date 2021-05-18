@@ -62,7 +62,7 @@ async def event_message(ctx):
                     add_command(data)
                     await ctx.channel.send_me(f'{ctx.author.name} -> Comando criado/editado com sucesso :D')
                     return
-                elif new == 'delete' or new == 'apaga' or new == 'del':
+                elif new == 'delete' or new == 'apagar' or new == 'del' or new == 'apaga':
                     cmd = message.split()[1]
                     cmd2 = unidecode.unidecode(cmd.lower())
                     if del_command(cmd2) != None:
