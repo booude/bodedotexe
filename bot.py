@@ -55,6 +55,10 @@ client = Client(
     client_secret=CLIENT_SECRET
 )
 
+alias = {'cmd': ['comando', 'command', 'cmd'],
+         'new': ['novo', 'new', 'add', 'adicionar', 'edit', 'editar'],
+         'del':['delete','apagar','apaga','del']}
+
 
 @bot.event
 async def event_ready():
@@ -68,22 +72,24 @@ async def event_message(ctx):
         return
 
     message = ctx.content
+    CHANNEL = ctx.channel.name.lower()
     if message[0] == BOT_PREFIX:
-        CHANNEL = ctx.channel.name.lower()
         cmd = message.split(' ')[0][1:]
-        if cmd == 'comando' or cmd == 'command' or cmd == 'cmd':
+        if cmd in alias['cmd']:
             if(ctx.author.is_mod) or (ctx.author == CHANNEL) or (ctx.author == '1bode'):
                 message = message.replace(f'{BOT_PREFIX}{cmd}', '').strip()
                 new = message.split()[0]
-                if new == 'novo' or new == 'new' or new == 'add' or new == 'edit' or new == 'editar':
+                if new in alias['new']:
                     cmd = message.split()[1]
-                    dsc = message.replace(f'{new} {cmd}', '').strip()
+                    if cmd[0] == BOT_PREFIX:
+                        cmd = cmd.split(' ')[0][1:]
+                    dsc = ' '.join(message.split()[2:])
                     cmd = unidecode.unidecode(cmd.lower())
                     data = {cmd: dsc}
                     add_command(data, CHANNEL)
                     await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" criado/editado com sucesso :D')
                     return
-                elif new == 'delete' or new == 'apagar' or new == 'del' or new == 'apaga':
+                elif new in alias['del']:
                     cmd = unidecode.unidecode(message.split()[1].lower())
                     if del_command(cmd, CHANNEL) != None:
                         await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}"" deletado :|')
@@ -91,18 +97,23 @@ async def event_message(ctx):
                     else:
                         await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" não foi encontrado :\ ')
         else:
-            msg = get_command(cmd.lower(), CHANNEL)            
-            msg = msg.replace('${user}', ctx.author.name, msg.count('${user}'))
             try:
-                msg = msg.replace('${touser}', message.split()[1], msg.count('${touser}'))
-            except IndexError:
-                msg = msg.replace('${touser}', ctx.author.name, msg.count('${touser}'))
-            for i in range(msg.count('${random}')):
-                msg = msg.replace('${random}', f'{randint(1,100)}', 1)
-                i+=1
-            if msg.find('${count}') !=-1:
-                msg = msg.replace('${count}', f'{get_count(cmd.lower(), CHANNEL)}', msg.count('${count}'))
-            await ctx.channel.send_me(f'{msg}')
+                msg = get_command(cmd.lower(), CHANNEL)
+                msg = msg.replace('${user}', ctx.author.name, msg.count('${user}'))
+                try:
+                    msg = msg.replace('${touser}', message.split()[
+                                    1], msg.count('${touser}'))
+                except IndexError:
+                    msg = msg.replace('${touser}', ctx.author.name, msg.count(
+                        '${touser}'))  # colocar random no lugar de author.name
+                while msg.find('${random}') != -1:
+                    msg = msg.replace('${random}', f'{randint(1,100)}', 1)
+                if msg.find('${count}') != -1:
+                    msg = msg.replace(
+                        '${count}', f'{get_count(cmd.lower(), CHANNEL)}', msg.count('${count}'))
+                await ctx.channel.send_me(f'{msg}')
+            except KeyError:
+                print(f'Comando "{cmd}" não foi encontrado no canal "{CHANNEL}"')
         return
 
 
@@ -137,6 +148,7 @@ def del_command(cmd, channel):
         json.dump(command, json_file, ensure_ascii=False,
                   indent=5, sort_keys=True)
     return boolean
+
 
 def get_count(cmd, channel):
     COMMAND_FILE = str(os.path.dirname(os.path.realpath(__file__))
