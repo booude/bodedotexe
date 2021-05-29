@@ -3,6 +3,7 @@ import os
 import json
 import unidecode
 
+from random import randint
 from dotenv import load_dotenv
 from os.path import join
 from twitchio.ext import commands
@@ -90,21 +91,24 @@ async def event_message(ctx):
                     else:
                         await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" não foi encontrado :\ ')
         else:
-            msg = get_command(cmd.lower(), CHANNEL)
-            words = msg.split()
-            for word in words:
-                if word == '(_USER_)':
-                    words[words.index(word)] = ctx.author.name
-                    print(words)
-            words = ' '.join(map(str, words))
-            await ctx.channel.send_me(f"{words}")
-            #await ctx.channel.send_me(f"{ctx.author.name} -> {msg}")
+            msg = get_command(cmd.lower(), CHANNEL)            
+            msg = msg.replace('${user}', ctx.author.name, msg.count('${user}'))
+            try:
+                msg = msg.replace('${touser}', message.split()[1], msg.count('${touser}'))
+            except IndexError:
+                msg = msg.replace('${touser}', ctx.author.name, msg.count('${touser}'))
+            for i in range(msg.count('${random}')):
+                msg = msg.replace('${random}', f'{randint(1,100)}', 1)
+                i+=1
+            if msg.find('${count}') !=-1:
+                msg = msg.replace('${count}', f'{get_count(cmd.lower(), CHANNEL)}', msg.count('${count}'))
+            await ctx.channel.send_me(f'{msg}')
         return
 
 
 def get_command(cmd, channel):
     COMMAND_FILE = str(os.path.dirname(os.path.realpath(__file__))
-                       ) + f'/channeldata/{channel}.json'
+                       ) + f'/data/{channel}/commands.json'
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
         return command[unidecode.unidecode(cmd)]
@@ -112,7 +116,7 @@ def get_command(cmd, channel):
 
 def add_command(data, channel):
     COMMAND_FILE = str(os.path.dirname(os.path.realpath(__file__))
-                       ) + f'/channeldata/{channel}.json'
+                       ) + f'/data/{channel}/commands.json'
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
         command.update(data)
@@ -123,14 +127,30 @@ def add_command(data, channel):
 
 def del_command(cmd, channel):
     COMMAND_FILE = str(os.path.dirname(os.path.realpath(__file__))
-                       ) + f'/channeldata/{channel}.json'
+                       ) + f'/data/{channel}/commands.json'
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
         boolean = command.pop(cmd, None)
+        if boolean:
+            command.pop(f'{cmd}count', None)
     with open(COMMAND_FILE, 'w', encoding='utf-8') as json_file:
         json.dump(command, json_file, ensure_ascii=False,
                   indent=5, sort_keys=True)
     return boolean
+
+def get_count(cmd, channel):
+    COMMAND_FILE = str(os.path.dirname(os.path.realpath(__file__))
+                       ) + f'/data/{channel}/commands.json'
+    with open(COMMAND_FILE) as json_file:
+        command = json.load(json_file)
+        try:
+            command.update({f'{cmd}count': command[f'{cmd}count']+1})
+        except KeyError:
+            command.update({f'{cmd}count': 0})
+    with open(COMMAND_FILE, 'w', encoding='utf-8') as json_file:
+        json.dump(command, json_file, ensure_ascii=False,
+                  indent=4, sort_keys=True)
+        return command[f'{cmd}count']
 
 
 if __name__ == "__main__":
