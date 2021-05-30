@@ -53,7 +53,7 @@ client = Client(
     client_secret=CLIENT_SECRET
 )
 
-alias = {'cmd': ['comando', 'command', 'cmd'],
+alias = {'cmd': ['comando', 'command', 'cmd', 'commands'],
          'new': ['novo', 'new', 'add', 'adicionar', 'edit', 'editar'],
          'del': ['delete', 'apagar', 'apaga', 'del']}
 
@@ -72,7 +72,7 @@ async def event_message(ctx):
     message = ctx.content
     CHANNEL = ctx.channel.name.lower()
     if message[0] == BOT_PREFIX:
-        cmd = message.split(' ')[0][1:]
+        cmd = message.split(' ')[0][1:].lower()
         if cmd in alias['cmd']:
             if(ctx.author.is_mod) or (ctx.author == CHANNEL) or (ctx.author == '1bode'):
                 message = message.replace(f'{BOT_PREFIX}{cmd}', '').strip()
@@ -82,21 +82,21 @@ async def event_message(ctx):
                     if cmd[0] == BOT_PREFIX:
                         cmd = cmd.split(' ')[0][1:]
                     dsc = ' '.join(message.split()[2:])
-                    cmd = unidecode.unidecode(cmd.lower())
-                    data = {cmd: dsc}
-                    add_command(data, CHANNEL)
+                    cmd = unidecode.unidecode(cmd)
+                    input = {cmd: dsc}
+                    command(input, CHANNEL, 'add')
                     await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" criado/editado com sucesso :D')
                     return
                 elif new in alias['del']:
                     cmd = unidecode.unidecode(message.split()[1].lower())
-                    if del_command(cmd, CHANNEL) != None:
-                        await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}"" deletado :|')
+                    if command(cmd, CHANNEL, 'del') != None:
+                        await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" deletado :|')
                         return
                     else:
                         await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" não foi encontrado :\ ')
         else:
             try:
-                msg = get_command(cmd.lower(), CHANNEL)
+                msg = command(cmd, CHANNEL, 'get')
                 msg = msg.replace(
                     '${user}', ctx.author.name, msg.count('${user}'))
                 try:
@@ -109,7 +109,7 @@ async def event_message(ctx):
                     msg = msg.replace('${random}', f'{randint(1,100)}', 1)
                 if msg.find('${count}') != -1:
                     msg = msg.replace(
-                        '${count}', f'{get_count(cmd.lower(), CHANNEL)}', msg.count('${count}'))
+                        '${count}', f'{command(cmd, CHANNEL, "count")}', msg.count('${count}'))
                 await ctx.channel.send_me(f'{msg}')
             except KeyError:
                 print(
@@ -146,48 +146,30 @@ async def command_join(ctx):
             await ctx.send_me(F'Bot NÃO ESTÁ no canal {ctx.author.name}')
 
 
-def get_command(cmd, channel):
+def command(input, channel, type):
     COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
-        return command[unidecode.unidecode(cmd)]
-
-
-def add_command(data, channel):
-    COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
-    with open(COMMAND_FILE) as json_file:
-        command = json.load(json_file)
-        command.update(data)
-    with open(COMMAND_FILE, 'w', encoding='utf-8') as json_file:
-        json.dump(command, json_file, ensure_ascii=False,
-                  indent=4, sort_keys=True)
-
-
-def del_command(cmd, channel):
-    COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
-    with open(COMMAND_FILE) as json_file:
-        command = json.load(json_file)
-        boolean = command.pop(cmd, None)
+    if type == 'get':
+        return command[unidecode.unidecode(input)]
+    elif type == 'add':
+        command.update(input)
+    elif type == 'del':
+        boolean = command.pop(input, None)
         if boolean:
-            command.pop(f'{cmd}count', None)
-    with open(COMMAND_FILE, 'w', encoding='utf-8') as json_file:
-        json.dump(command, json_file, ensure_ascii=False,
-                  indent=5, sort_keys=True)
-    return boolean
-
-
-def get_count(cmd, channel):
-    COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
-    with open(COMMAND_FILE) as json_file:
-        command = json.load(json_file)
+            command.pop(f'{input}count', None)
+    elif type == 'count':
         try:
-            command.update({f'{cmd}count': command[f'{cmd}count']+1})
+            command.update({f'{input}count': command[f'{input}count']+1})
         except KeyError:
-            command.update({f'{cmd}count': 0})
+            command.update({f'{input}count': 1})
     with open(COMMAND_FILE, 'w', encoding='utf-8') as json_file:
         json.dump(command, json_file, ensure_ascii=False,
                   indent=4, sort_keys=True)
-        return command[f'{cmd}count']
+        if type == 'del':
+            return boolean
+        elif type == 'count':
+            return command[f'{input}count']
 
 
 def file_check(channel):
