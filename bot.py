@@ -106,14 +106,17 @@ async def event_message(ctx):
                     msg = msg.replace('${touser}', ctx.author.name, msg.count(
                         '${touser}'))  # colocar random no lugar de author.name
                 while msg.find('${random}') != -1:
-                    msg = msg.replace('${random}', f'{randint(1,100)}', 1)
+                    msg = msg.replace('${random}', f'{randint(0,100)}', 1)#0 e 100 como variáveis
                 if msg.find('${count}') != -1:
                     msg = msg.replace(
-                        '${count}', f'{command(cmd, CHANNEL, "count")}', msg.count('${count}'))
-                await ctx.channel.send_me(f'{msg}')
+                        '${count}', f'{command(unidecode.unidecode(cmd), CHANNEL, "count")}', msg.count('${count}'))
+                #programar ${random.pick '1','2',...'n'} para !8ball
+                #programar ${url fetch http} para leagueoflegends
+                await ctx.channel.send(f'{msg}')
             except KeyError:
                 print(
                     f'Comando "{cmd}" não foi encontrado no canal "{CHANNEL}"')
+    #else comandos sem prefixo
     await bot.handle_commands(ctx)
 
 
@@ -145,6 +148,8 @@ async def command_join(ctx):
         else:
             await ctx.send_me(F'Bot NÃO ESTÁ no canal {ctx.author.name}')
 
+#@bot.command(name='followage')
+#@bot.command(name='uptime')
 
 def command(input, channel, type):
     COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
