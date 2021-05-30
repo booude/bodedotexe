@@ -21,8 +21,7 @@ CLIENT_SECRET = os.environ.get('CLIENT_SECRET')
 
 
 def get_channel():
-    JSON_FILE = str(os.path.dirname(
-        os.path.realpath(__file__))) + '/channels.json'
+    JSON_FILE = str(dir_path) + '/channels.json'
     with open(JSON_FILE) as json_file:
         data = json.load(json_file)
         global CHAN
@@ -31,8 +30,7 @@ def get_channel():
 
 
 def update_channel(value):
-    JSON_FILE = str(os.path.dirname(os.path.realpath(__file__))
-                    ) + f'/channels.json'
+    JSON_FILE = str(dir_path) + f'/channels.json'
     data = None
     with open(JSON_FILE) as json_file:
         data = json.load(json_file)
@@ -149,16 +147,14 @@ async def command_join(ctx):
 
 
 def get_command(cmd, channel):
-    COMMAND_FILE = str(os.path.dirname(os.path.realpath(__file__))
-                       ) + f'/data/{channel}/commands.json'
+    COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
         return command[unidecode.unidecode(cmd)]
 
 
 def add_command(data, channel):
-    COMMAND_FILE = str(os.path.dirname(os.path.realpath(__file__))
-                       ) + f'/data/{channel}/commands.json'
+    COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
         command.update(data)
@@ -168,8 +164,7 @@ def add_command(data, channel):
 
 
 def del_command(cmd, channel):
-    COMMAND_FILE = str(os.path.dirname(os.path.realpath(__file__))
-                       ) + f'/data/{channel}/commands.json'
+    COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
         boolean = command.pop(cmd, None)
@@ -182,8 +177,7 @@ def del_command(cmd, channel):
 
 
 def get_count(cmd, channel):
-    COMMAND_FILE = str(os.path.dirname(os.path.realpath(__file__))
-                       ) + f'/data/{channel}/commands.json'
+    COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
         try:
@@ -198,12 +192,10 @@ def get_count(cmd, channel):
 
 def file_check(channel):
     try:
-        os.mkdir(str(os.path.dirname(os.path.realpath(__file__))
-                     ) + f'/data/{channel}')
+        os.mkdir(str(dir_path) + f'/data/{channel}')
     except FileExistsError:
         pass
-    JSON_FILE = str(os.path.dirname(os.path.realpath(__file__))
-                    ) + f'/data/{channel}/commands.json'
+    JSON_FILE = str(dir_path) + f'/data/{channel}/commands.json'
     if os.path.isfile(JSON_FILE) and os.access(JSON_FILE, os.R_OK):
         return True
     else:
