@@ -57,7 +57,7 @@ client = Client(
 
 alias = {'cmd': ['comando', 'command', 'cmd'],
          'new': ['novo', 'new', 'add', 'adicionar', 'edit', 'editar'],
-         'del':['delete','apagar','apaga','del']}
+         'del': ['delete', 'apagar', 'apaga', 'del']}
 
 
 @bot.event
@@ -99,10 +99,11 @@ async def event_message(ctx):
         else:
             try:
                 msg = get_command(cmd.lower(), CHANNEL)
-                msg = msg.replace('${user}', ctx.author.name, msg.count('${user}'))
+                msg = msg.replace(
+                    '${user}', ctx.author.name, msg.count('${user}'))
                 try:
                     msg = msg.replace('${touser}', message.split()[
-                                    1], msg.count('${touser}'))
+                        1], msg.count('${touser}'))
                 except IndexError:
                     msg = msg.replace('${touser}', ctx.author.name, msg.count(
                         '${touser}'))  # colocar random no lugar de author.name
@@ -113,8 +114,38 @@ async def event_message(ctx):
                         '${count}', f'{get_count(cmd.lower(), CHANNEL)}', msg.count('${count}'))
                 await ctx.channel.send_me(f'{msg}')
             except KeyError:
-                print(f'Comando "{cmd}" não foi encontrado no canal "{CHANNEL}"')
-        return
+                print(
+                    f'Comando "{cmd}" não foi encontrado no canal "{CHANNEL}"')
+    await bot.handle_commands(ctx)
+
+
+@bot.command(name='entrar')
+async def command_join(ctx):
+    AUTHOR = ctx.author.name.lower()
+    if ctx.channel.name.lower() == BOT_NICK.lower():
+        CONTA = f'#{AUTHOR}'
+        if CONTA in CHAN:
+            await ctx.send_me(f'Bot JÁ ESTÁ no canal {ctx.author.name}')
+        else:
+            CHAN.append(f'#{AUTHOR}')
+            update_channel(CHAN)
+            file_check(AUTHOR)
+            await bot.join_channels(CHAN)
+            await ctx.send_me(f'Bot ENTROU no canal {ctx.author.name}')
+
+
+@bot.command(name='sair')
+async def command_join(ctx):
+    AUTHOR = ctx.author.name.lower()
+    if ctx.channel.name.lower() == BOT_NICK.lower():
+        CONTA = f'#{AUTHOR}'
+        if CONTA in CHAN:
+            CHAN.remove(f'#{AUTHOR}')
+            update_channel(CHAN)
+            await bot.part_channels([AUTHOR])
+            await ctx.send_me(F'Bot SAIU do canal {ctx.author.name}')
+        else:
+            await ctx.send_me(F'Bot NÃO ESTÁ no canal {ctx.author.name}')
 
 
 def get_command(cmd, channel):
@@ -163,6 +194,21 @@ def get_count(cmd, channel):
         json.dump(command, json_file, ensure_ascii=False,
                   indent=4, sort_keys=True)
         return command[f'{cmd}count']
+
+
+def file_check(channel):
+    try:
+        os.mkdir(str(os.path.dirname(os.path.realpath(__file__))
+                     ) + f'/data/{channel}')
+    except FileExistsError:
+        pass
+    JSON_FILE = str(os.path.dirname(os.path.realpath(__file__))
+                    ) + f'/data/{channel}/commands.json'
+    if os.path.isfile(JSON_FILE) and os.access(JSON_FILE, os.R_OK):
+        return True
+    else:
+        with io.open(os.path.join(JSON_FILE), 'w') as json_file:
+            json_file.write(json.dumps({}))
 
 
 if __name__ == "__main__":
