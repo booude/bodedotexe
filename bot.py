@@ -3,7 +3,7 @@ import os
 import json
 import unidecode
 
-from random import randint
+from random import randint, choice
 from dotenv import load_dotenv
 from os.path import join
 from twitchio.ext import commands
@@ -96,27 +96,39 @@ async def event_message(ctx):
                         await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" não foi encontrado :\ ')
         else:
             try:
+                # Procura o comando no commands.json do canal
                 msg = command(cmd, CHANNEL, 'get')
-                msg = msg.replace(
-                    '${user}', ctx.author.name, msg.count('${user}'))
                 try:
-                    msg = msg.replace('${touser}', message.split()[
-                        1], msg.count('${touser}'))
+                    # Substitui todos os $(user) da resposta por quem foi mencionado após o comando.
+                    msg = msg.replace('$(user)', message.split()[1])
                 except IndexError:
-                    msg = msg.replace('${touser}', ctx.author.name, msg.count(
-                        '${touser}'))  # colocar random no lugar de author.name
-                while msg.find('${random}') != -1:
-                    msg = msg.replace('${random}', f'{randint(0,100)}', 1)#0 e 100 como variáveis
-                if msg.find('${count}') != -1:
+                    # Caso não tenha menção, substitui por quem enviou o comando.
+                    msg = msg.replace('$(user)', ctx.author.name)
+                try:
+                    # Substitui todos os $(touser) da resposta por quem foi mencionado após o comando.
+                    msg = msg.replace('$(touser)', message.split()[1])
+                except IndexError:
+                    # Caso não tenha menção, substitui por um viewer aleatório.
+                    chatters = await client.get_chatters(CHANNEL)
+                    all_chatters = ' '.join(chatters.all).split()
+                    msg = msg.replace('$(touser)', choice(all_chatters))
+                while msg.find('$(random)') != -1:
+                    # Substitui todos os $(random) da resposta por um número de 1 a 100.
+                    # todo: 0 e 100 como variáveis
+                    msg = msg.replace('$(random)', f'{randint(0,100)}', 1)
+                if msg.find('$(count)') != -1:
+                    # Substitui todos os $(count) pelo incremento +1 do contador do comando utilizado.
                     msg = msg.replace(
-                        '${count}', f'{command(unidecode.unidecode(cmd), CHANNEL, "count")}', msg.count('${count}'))
-                #programar ${random.pick '1','2',...'n'} para !8ball
-                #programar ${url fetch http} para leagueoflegends
+                        '$(count)', f'{command(unidecode.unidecode(cmd), CHANNEL, "count")}')
+                #Substitui $(channel) pelo nome do canal
+                msg = msg.replace('$(channel)', CHANNEL)
+                # todo: programar ${random.pick '1','2',...'n'} para !8ball
+                # todo: programar ${url fetch http} para leagueoflegends
                 await ctx.channel.send(f'{msg}')
             except KeyError:
                 print(
                     f'Comando "{cmd}" não foi encontrado no canal "{CHANNEL}"')
-    #else comandos sem prefixo
+    # todo: else comandos sem prefixo
     await bot.handle_commands(ctx)
 
 
@@ -148,8 +160,9 @@ async def command_join(ctx):
         else:
             await ctx.send_me(F'Bot NÃO ESTÁ no canal {ctx.author.name}')
 
-#@bot.command(name='followage')
-#@bot.command(name='uptime')
+# @bot.command(name='followage')
+# @bot.command(name='uptime')
+
 
 def command(input, channel, type):
     COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
