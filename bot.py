@@ -126,16 +126,12 @@ async def event_message(ctx):
 
                 # todo: programar ${random.pick '1','2',...'n'} para !8ball
                 if msg.find('$(random.pick') != -1:
-                    print('entrou')
                     picks = re.findall(r'\$\(random\.pick (.*?)\)', msg)
-                    print('picks:', picks)
                     choices = []
                     for i in picks:
                         a = picks[picks.index(i)].replace(
                             '"', '').replace(',', ' ').split()
-                        print('a:', a)
                         choices.append(choice(a))
-                        print('choices:', choices)
                         msg = msg.replace('$(random.pick', '').replace(
                             i, choices[picks.index(i)]).replace(')', '')
 
