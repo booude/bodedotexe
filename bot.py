@@ -129,9 +129,9 @@ async def event_message(ctx):
                     picks = re.findall(r'\$\(random\.pick (.*?)\)', msg)
                     choices = []
                     for i in picks:
-                        a = re.split(r"\"\W+\"", picks[picks.index(i)])
+                        a = re.split(r"[\"|\']\W+[\"|\']", picks[picks.index(i)])
                         print(a)
-                        choices.append(choice(a).replace('"',''))
+                        choices.append(choice(a).replace('"','').replace("'",''))
                         msg = msg.replace('$(random.pick', '').replace(
                             i, choices[picks.index(i)]).replace(')', '')
 
