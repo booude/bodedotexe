@@ -124,14 +124,14 @@ async def event_message(ctx):
                 # Substitui $(channel) pelo nome do canal
                 msg = msg.replace('$(channel)', CHANNEL)
 
-                # todo: programar ${random.pick '1','2',...'n'} para !8ball
+                # ${random.pick '1','2',...'n'} para !8ball
                 if msg.find('$(random.pick') != -1:
                     picks = re.findall(r'\$\(random\.pick (.*?)\)', msg)
                     choices = []
                     for i in picks:
-                        a = picks[picks.index(i)].replace(
-                            '"', '').replace(',', ' ').split()
-                        choices.append(choice(a))
+                        a = re.split(r"\"\W+\"", picks[picks.index(i)])
+                        print(a)
+                        choices.append(choice(a).replace('"',''))
                         msg = msg.replace('$(random.pick', '').replace(
                             i, choices[picks.index(i)]).replace(')', '')
 
