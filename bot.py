@@ -2,6 +2,7 @@ import io
 import os
 import json
 import unidecode
+import re
 
 from random import randint, choice
 from dotenv import load_dotenv
@@ -120,10 +121,25 @@ async def event_message(ctx):
                     # Substitui todos os $(count) pelo incremento +1 do contador do comando utilizado.
                     msg = msg.replace(
                         '$(count)', f'{command(unidecode.unidecode(cmd), CHANNEL, "count")}')
-                #Substitui $(channel) pelo nome do canal
+                # Substitui $(channel) pelo nome do canal
                 msg = msg.replace('$(channel)', CHANNEL)
+
                 # todo: programar ${random.pick '1','2',...'n'} para !8ball
-                # todo: programar ${url fetch http} para leagueoflegends
+                if msg.find('$(random.pick') != -1:
+                    print('entrou')
+                    picks = re.findall(r'\$\(random\.pick (.*?)\)', msg)
+                    print('picks:', picks)
+                    choices = []
+                    for i in picks:
+                        a = picks[picks.index(i)].replace(
+                            '"', '').replace(',', ' ').split()
+                        print('a:', a)
+                        choices.append(choice(a))
+                        print('choices:', choices)
+                        msg = msg.replace('$(random.pick', '').replace(
+                            i, choices[picks.index(i)]).replace(')', '')
+
+                # todo: programar ${url fetch http://API} para leagueoflegends
                 await ctx.channel.send(f'{msg}')
             except KeyError:
                 print(
