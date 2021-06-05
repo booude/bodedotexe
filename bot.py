@@ -139,8 +139,6 @@ async def event_message(ctx):
                                      picks[picks.index(i)])
                         choices.append(choice(a).replace(
                             '"', '').replace("'", ''))
-                        #msg = msg.replace('$(random.pick', '').replace(i, choices[picks.index(i)]).replace(')', '')
-                        print(choices)
                         msg = re.sub(r'\$\(random\.pick(.*?)\)',
                                      f'{choices[picks.index(i)]}', msg, 1)
 
