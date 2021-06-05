@@ -84,7 +84,7 @@ async def event_message(ctx):
                         cmd = cmd.split(' ')[0][1:]
                     dsc = ' '.join(message.split()[2:])
                     cmd = unidecode.unidecode(cmd)
-                    input = {cmd: dsc}
+                    input = {cmd: {"msg": dsc}}
                     command(input, CHANNEL, 'add')
                     await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" criado/editado com sucesso :D')
                     return
@@ -96,118 +96,147 @@ async def event_message(ctx):
                     else:
                         await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" não foi encontrado :\ ')
         else:
+            # Procura o comando no commands.json do canal
             try:
-                # Procura o comando no commands.json do canal
                 msg = command(cmd, CHANNEL, 'get')
-                try:
-                    # Substitui todos os $(user) da resposta por quem foi mencionado após o comando.
-                    msg = msg.replace('$(user)', message.split()[1])
-                except IndexError:
-                    # Caso não tenha menção, substitui por quem enviou o comando.
-                    msg = msg.replace('$(user)', ctx.author.name)
-                try:
-                    # Substitui todos os $(touser) da resposta por quem foi mencionado após o comando.
-                    msg = msg.replace('$(touser)', message.split()[1])
-                except IndexError:
-                    # Caso não tenha menção, substitui por um viewer aleatório.
-                    chatters = await client.get_chatters(CHANNEL)
-                    all_chatters = ' '.join(chatters.all).split()
-                    msg = msg.replace('$(touser)', choice(all_chatters))
-                while msg.find('$(random)') != -1:
-                    # Substitui todos os $(random) da resposta por um número de 1 a 100.
-                    # todo: 0 e 100 como variáveis
-                    msg = msg.replace('$(random)', f'{randint(0,100)}', 1)
-                if msg.find('$(count)') != -1:
-                    # Substitui todos os $(count) pelo incremento +1 do contador do comando utilizado.
-                    msg = msg.replace(
-                        '$(count)', f'{command(unidecode.unidecode(cmd), CHANNEL, "count")}')
+
                 # Substitui $(channel) pelo nome do canal
                 msg = msg.replace('$(channel)', CHANNEL)
 
-                # ${random.pick '1','2',...'n'} para !8ball
+                # Substitui todos os $(user) da resposta por quem foi mencionado após o comando.
+                try:
+                    msg = msg.replace('$(user)', message.split()[1])
+
+                    # Caso não tenha menção, substitui por quem enviou o comando.
+                except IndexError:
+                    msg = msg.replace('$(user)', ctx.author.name)
+
+                    # Substitui todos os $(touser) da resposta por quem foi mencionado após o comando.
+                try:
+                    msg = msg.replace('$(touser)', message.split()[1])
+
+                    # Caso não tenha menção, substitui por um viewer aleatório.
+                except IndexError:
+                    chatters = await client.get_chatters(CHANNEL)
+                    all_chatters = ' '.join(chatters.all).split()
+                    msg = msg.replace('$(touser)', choice(all_chatters))
+
+                    # Substitui todos os $(count) pelo incremento +1 do contador do comando utilizado.
+                if msg.find('$(count)') != -1:
+                    msg = msg.replace(
+                        '$(count)', f'{command(unidecode.unidecode(cmd), CHANNEL, "count")}')  # <- refazer com regex?
+
+                # Substitui todos os $(random) da resposta por um número de 1 a 100.
+                while msg.find('$(random)') != -1:
+                    msg = msg.replace('$(random)', f'{randint(0,100)}', 1)
+
+                # Substitui o $(random.pick) por um valor aleatório da lista informada
                 if msg.find('$(random.pick') != -1:
                     picks = re.findall(r'\$\(random\.pick (.*?)\)', msg)
                     choices = []
                     for i in picks:
-                        a = re.split(r"[\"|\']\W+[\"|\']", picks[picks.index(i)])
-                        print(a)
-                        choices.append(choice(a).replace('"','').replace("'",''))
-                        msg = msg.replace('$(random.pick', '').replace(
-                            i, choices[picks.index(i)]).replace(')', '')
+                        a = re.split(r"[\"|\']\W+[\"|\']",
+                                     picks[picks.index(i)])
+                        choices.append(choice(a).replace(
+                            '"', '').replace("'", ''))
+                        #msg = msg.replace('$(random.pick', '').replace(i, choices[picks.index(i)]).replace(')', '')
+                        print(choices)
+                        msg = re.sub(r'\$\(random\.pick(.*?)\)',
+                                     f'{choices[picks.index(i)]}', msg, 1)
+
+                # Caso o random possua um range determinado.
+                if msg.find('$(random') != -1:
+                    numbers = re.findall(r'\$\(random\.(.*?)\)', msg)
+                    value = []
+                    for i in numbers:
+                        value.append(i.split('-'))
+                        try:
+                            msg = re.sub(
+                                r'\$\(random\.(.*?)\)', f'{randint(int(value[numbers.index(i)][0]),int(value[numbers.index(i)][1]))}', msg, 1)
+                        except ValueError:
+                            msg = re.sub(r'\$\(random(.*?)\)',
+                                         f'{randint(0,100)}', msg, 1)
 
                 # todo: programar ${url fetch http://API} para leagueoflegends
                 await ctx.channel.send(f'{msg}')
             except KeyError:
                 print(
                     f'Comando "{cmd}" não foi encontrado no canal "{CHANNEL}"')
+
     # todo: else comandos sem prefixo
     await bot.handle_commands(ctx)
 
 
+# Insere o bot no próprio canal ao utilizar o comando no chat do bot
 @bot.command(name='entrar')
 async def command_join(ctx):
     AUTHOR = ctx.author.name.lower()
+    if AUTHOR == '1bode':
+        AUTHOR = ctx.content.split()[1]
     if ctx.channel.name.lower() == BOT_NICK.lower():
         CONTA = f'#{AUTHOR}'
         if CONTA in CHAN:
-            await ctx.send_me(f'Bot JÁ ESTÁ no canal {ctx.author.name}')
+            await ctx.send_me(f'Bot JÁ ESTÁ no canal {AUTHOR}')
         else:
             CHAN.append(f'#{AUTHOR}')
             update_channel(CHAN)
             file_check(AUTHOR)
             await bot.join_channels(CHAN)
-            await ctx.send_me(f'Bot ENTROU no canal {ctx.author.name}')
+            await ctx.send_me(f'Bot ENTROU no canal {AUTHOR}')
 
 
+# Remove o bot do próprio canal ao utilizar o comando no chat do bot
 @bot.command(name='sair')
 async def command_join(ctx):
     AUTHOR = ctx.author.name.lower()
+    if AUTHOR == '1bode':
+        AUTHOR = ctx.content.split()[1]
     if ctx.channel.name.lower() == BOT_NICK.lower():
         CONTA = f'#{AUTHOR}'
         if CONTA in CHAN:
             CHAN.remove(f'#{AUTHOR}')
             update_channel(CHAN)
             await bot.part_channels([AUTHOR])
-            await ctx.send_me(F'Bot SAIU do canal {ctx.author.name}')
+            await ctx.send_me(F'Bot SAIU do canal {AUTHOR}')
         else:
-            await ctx.send_me(F'Bot NÃO ESTÁ no canal {ctx.author.name}')
+            await ctx.send_me(F'Bot NÃO ESTÁ no canal {AUTHOR}')
 
 # @bot.command(name='followage')
 # @bot.command(name='uptime')
 
 
 def command(input, channel, type):
-    COMMAND_FILE = str(dir_path) + f'/data/{channel}/commands.json'
+    COMMAND_FILE = str(dir_path) + f'/data/{channel}/custom_commands.json'
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
     if type == 'get':
-        return command[unidecode.unidecode(input)]
+        return command[f'{input}']['msg']
     elif type == 'add':
         command.update(input)
     elif type == 'del':
         boolean = command.pop(input, None)
-        if boolean:
-            command.pop(f'{input}count', None)
     elif type == 'count':
         try:
-            command.update({f'{input}count': command[f'{input}count']+1})
+            command[f'{input}'][f'{type}'] += 1
         except KeyError:
-            command.update({f'{input}count': 1})
+            command[f'{input}'][f'{type}'] = 1
     with open(COMMAND_FILE, 'w', encoding='utf-8') as json_file:
         json.dump(command, json_file, ensure_ascii=False,
                   indent=4, sort_keys=True)
         if type == 'del':
             return boolean
         elif type == 'count':
-            return command[f'{input}count']
+            return command[f'{input}'][f'{type}']
 
 
 def file_check(channel):
     try:
+        # Tenta criar pasta para o canal
         os.mkdir(str(dir_path) + f'/data/{channel}')
     except FileExistsError:
         pass
-    JSON_FILE = str(dir_path) + f'/data/{channel}/commands.json'
+    # Checa se já existe o json. Caso não exista, cria o arquivo com os valores {}
+    JSON_FILE = str(dir_path) + f'/data/{channel}/custom_commands.json'
     if os.path.isfile(JSON_FILE) and os.access(JSON_FILE, os.R_OK):
         return True
     else:
