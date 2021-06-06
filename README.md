@@ -25,7 +25,6 @@ Open `.env` and insert the following fields:
 | `CLIENT_SECRET`| Client SECRET obtained from Twitch's Developer site                   |
 | `BOT_NICK`     | Twitch name of the Bot                                                | 
 | `BOT_PREFIX`   | Prefix for commands the bot should listen to (set to `!` per default) |
-| `CHANNEL`      | The name of the your Twitch channel you want the bot to run at        |
 
 Start Bot:
 
@@ -41,12 +40,12 @@ Install necessary packages (globally):
 sudo -H python3 -m pip install -r requirements.txt
 ```
 
-Open the unit file [`twitch_count_bot.service`](./twitch_count_bot.service) and check if the path to `bot.py` under `[Serivce]` `ExecStart` is correct.
+Open the unit file [`bodedotexe.service`](./bodedotexe.service) and check if the path to `bot.py` under `[Serivce]` `ExecStart` is correct.
 
 Copy systemd unit file to unit file directory:
 
 ```bash
-sudo cp twitch_count_bot.service /lib/systemd/system
+sudo cp bodedotexe.service /lib/systemd/system
 ```
 
 Reload all units:
@@ -55,26 +54,26 @@ Reload all units:
 sudo systemctl daemon-release
 ```
 
-Enable the Twitch Count Bot Unit:
+Enable the BodeDotEXE Unit:
 
 ```
-sudo systemctl enable twitch_count_bot.service
+sudo systemctl enable bodedotexe.service
 ```
 
 Start the bot:
 
 ```
-sudo systemctl start twitch_count_bot.service
+sudo systemctl start bodedotexe.service
 ```
 
 Check if the bot is running with:
 
 ```
-sudo systemctl status twitch_count_bot.service
+sudo systemctl status bodedotexe.service
 ```
 
 Check if the output of the bot if an error occurs:
 
 ```
-sudo systemctl enable twitch_count_bot.service
+sudo systemctl enable bodedotexe.service
 ```
