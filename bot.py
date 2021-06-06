@@ -142,7 +142,7 @@ async def event_message(ctx):
                         msg = re.sub(r'\$\(random\.pick(.*?)\)',
                                      f'{choices[picks.index(i)]}', msg, 1)
 
-                # Caso o random possua um range determinado.
+                # Mesmo que $(random), caso o random possua um range determinado.
                 if msg.find('$(random') != -1:
                     numbers = re.findall(r'\$\(random\.(.*?)\)', msg)
                     value = []

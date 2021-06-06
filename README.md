@@ -26,6 +26,12 @@ Open `.env` and insert the following fields:
 | `BOT_NICK`     | Twitch name of the Bot                                                | 
 | `BOT_PREFIX`   | Prefix for commands the bot should listen to (set to `!` per default) |
 
+Copy `channels.json.sample` to `channels.json` and follow the example shown in the file to add channels
+
+```
+cp .channels.json.sample channels.json
+```
+
 Start Bot:
 
 ```
