@@ -198,6 +198,12 @@ async def command_leave(ctx):
         else:
             await ctx.send_me(f'Bot NÃO ESTÁ no canal {AUTHOR}')
 
+# Lista os comandos do canal
+@bot.command(name='comandos')
+async def command_commands(ctx):
+    list1 = ', '.join(list(mod.get("@all", *CHANNELS).keys()))
+    await ctx.send(f'Comandos do canal: {list1}')
+
 # Teste de comando e tratamento de erro
 for i in list(mod.get('@all', *CHANNELS).keys()):
     @bot.command(name=f'{i}')
