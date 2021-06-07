@@ -84,7 +84,7 @@ async def event_message(ctx):
                         cmd = cmd.split(' ')[0][1:]
                     dsc = ' '.join(message.split()[2:])
                     cmd = unidecode.unidecode(cmd)
-                    input = {cmd: {"msg": dsc}}
+                    input = {cmd: {"msg": dsc, "count": {}}}
                     command(input, CHANNEL, 'add')
                     await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" criado/editado com sucesso :D')
                     return
@@ -107,31 +107,45 @@ async def event_message(ctx):
                 try:
                     msg = msg.replace('$(user)', message.split()[1])
 
-                    # Caso não tenha menção, substitui por quem enviou o comando.
+                # Caso não tenha menção, substitui por quem enviou o comando.
                 except IndexError:
                     msg = msg.replace('$(user)', ctx.author.name)
 
-                    # Substitui todos os $(touser) da resposta por quem foi mencionado após o comando.
+                # Substitui todos os $(touser) da resposta por quem foi mencionado após o comando.
                 try:
                     msg = msg.replace('$(touser)', message.split()[1])
 
-                    # Caso não tenha menção, substitui por um viewer aleatório.
+                # Caso não tenha menção, substitui por um viewer aleatório.
                 except IndexError:
                     chatters = await client.get_chatters(CHANNEL)
                     all_chatters = ' '.join(chatters.all).split()
                     msg = msg.replace('$(touser)', choice(all_chatters))
 
-                    # Substitui todos os $(count) pelo incremento +1 do contador do comando utilizado.
+                # Substitui todos os $(count) pelo incremento +1 do contador do comando utilizado.
                 if msg.find('$(count)') != -1:
                     msg = msg.replace(
-                        '$(count)', f'{command(unidecode.unidecode(cmd), CHANNEL, "count")}')  # <- refazer com regex?
+                        '$(count)', f'{command(unidecode.unidecode(cmd), CHANNEL, "count")}')
 
-                # Substitui todos os $(random) da resposta por um número de 1 a 100.
+                # Substitui todos os $(count nome) pelo incremento +1 de acordo com o nome.
+                if msg.find('$(count ') != -1:
+                    counter = re.findall(r'\$\(count (.*?)\)', msg)
+                    for i in counter:
+                        msg = re.sub(
+                            r'\$\(count (.*?)\)', f'{command(unidecode.unidecode(cmd), CHANNEL, "count", i)}', msg, 1)
+
+                # Substitui todos os $(random) por um número de 1 a 100.
                 while msg.find('$(random)') != -1:
                     msg = msg.replace('$(random)', f'{randint(0,100)}', 1)
 
+                # Substitui todos os $(random.chatter) por um viewer aleatório
+                while msg.find('$(random.chatter)') != -1:
+                    chatters = await client.get_chatters(CHANNEL)
+                    all_chatters = ' '.join(chatters.all).split()
+                    msg = msg.replace('$(random.chatter)',
+                                      choice(all_chatters))
+
                 # Substitui o $(random.pick) por um valor aleatório da lista informada
-                if msg.find('$(random.pick') != -1:
+                if msg.find('$(random.pick ') != -1:
                     picks = re.findall(r'\$\(random\.pick (.*?)\)', msg)
                     choices = []
                     for i in picks:
@@ -142,7 +156,7 @@ async def event_message(ctx):
                         msg = re.sub(r'\$\(random\.pick(.*?)\)',
                                      f'{choices[picks.index(i)]}', msg, 1)
 
-                # Mesmo que $(random), caso o random possua um range determinado.
+                # Mesmo que $(random) em caso do random possuir um range determinado.
                 if msg.find('$(random') != -1:
                     numbers = re.findall(r'\$\(random\.(.*?)\)', msg)
                     value = []
@@ -209,7 +223,7 @@ async def command_join(ctx):
 # @bot.command(name='uptime')
 
 
-def command(input, channel, type):
+def command(input, channel, type, var=''):
     COMMAND_FILE = str(dir_path) + f'/data/{channel}/custom_commands.json'
     with open(COMMAND_FILE) as json_file:
         command = json.load(json_file)
@@ -220,17 +234,19 @@ def command(input, channel, type):
     elif type == 'del':
         boolean = command.pop(input, None)
     elif type == 'count':
+        if var == '':
+            var = 'count'
         try:
-            command[f'{input}'][f'{type}'] += 1
+            command[f'{input}']['count'][f'{var}'] += 1
         except KeyError:
-            command[f'{input}'][f'{type}'] = 1
+            command[f'{input}']['count'].update({f'{var}': 1})
     with open(COMMAND_FILE, 'w', encoding='utf-8') as json_file:
         json.dump(command, json_file, ensure_ascii=False,
                   indent=4, sort_keys=True)
         if type == 'del':
             return boolean
         elif type == 'count':
-            return command[f'{input}'][f'{type}']
+            return command[f'{input}'][f'{type}'][f'{var}']
 
 
 def file_check(channel):
