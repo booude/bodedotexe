@@ -1,9 +1,8 @@
-import io
 import os
-import json
-import unidecode
 import re
+import mod
 
+from unidecode import unidecode as ud
 from random import randint, choice
 from dotenv import load_dotenv
 from os.path import join
@@ -19,34 +18,14 @@ CLIENT_ID = os.environ.get('CLIENT_ID')
 BOT_NICK = os.environ.get('BOT_NICK')
 BOT_PREFIX = os.environ.get('BOT_PREFIX')
 CLIENT_SECRET = os.environ.get('CLIENT_SECRET')
-
-
-def get_channel():
-    JSON_FILE = str(dir_path) + '/channels.json'
-    with open(JSON_FILE) as json_file:
-        data = json.load(json_file)
-        global CHAN
-        CHAN = data['CHANNEL']
-    return CHAN
-
-
-def update_channel(value):
-    JSON_FILE = str(dir_path) + f'/channels.json'
-    data = None
-    with open(JSON_FILE) as json_file:
-        data = json.load(json_file)
-    if data is not None:
-        data['CHANNEL'] = value
-    with open(JSON_FILE, 'w') as json_file:
-        json.dump(data, json_file, sort_keys=True, indent=4)
-
+CHANNELS = mod.get_channel()
 
 bot = commands.Bot(
     irc_token=TMI_TOKEN,
     client_id=CLIENT_ID,
     nick=BOT_NICK,
     prefix=BOT_PREFIX,
-    initial_channels=get_channel()
+    initial_channels=CHANNELS
 )
 
 client = Client(
@@ -83,22 +62,24 @@ async def event_message(ctx):
                     if cmd[0] == BOT_PREFIX:
                         cmd = cmd.split(' ')[0][1:]
                     dsc = ' '.join(message.split()[2:])
-                    cmd = unidecode.unidecode(cmd)
+                    cmd = ud(cmd.lower())
                     input = {cmd: {"msg": dsc, "count": {}}}
-                    command(input, CHANNEL, 'add')
+                    mod.add(input, CHANNEL)
                     await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" criado/editado com sucesso :D')
                     return
                 elif new in alias['del']:
-                    cmd = unidecode.unidecode(message.split()[1].lower())
-                    if command(cmd, CHANNEL, 'del') != None:
+                    cmd = ud(message.split()[1].lower())
+                    if mod.delcmd(cmd, CHANNEL) != None:
                         await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" deletado :|')
                         return
                     else:
                         await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" não foi encontrado :\ ')
+                        return
         else:
             # Procura o comando no commands.json do canal
             try:
-                msg = command(cmd, CHANNEL, 'get')
+                cmd = ud(cmd.lower())
+                msg = mod.get(cmd, CHANNEL)
 
                 # Substitui $(channel) pelo nome do canal
                 msg = msg.replace('$(channel)', CHANNEL)
@@ -124,14 +105,14 @@ async def event_message(ctx):
                 # Substitui todos os $(count) pelo incremento +1 do contador do comando utilizado.
                 if msg.find('$(count)') != -1:
                     msg = msg.replace(
-                        '$(count)', f'{command(unidecode.unidecode(cmd), CHANNEL, "count")}')
+                        '$(count)', f'{mod.count(cmd, CHANNEL)}')
 
                 # Substitui todos os $(count nome) pelo incremento +1 de acordo com o nome.
                 if msg.find('$(count ') != -1:
                     counter = re.findall(r'\$\(count (.*?)\)', msg)
                     for i in counter:
-                        msg = re.sub(
-                            r'\$\(count (.*?)\)', f'{command(unidecode.unidecode(cmd), CHANNEL, "count", i)}', msg, 1)
+                        msg = msg.replace(
+                            f'$(count {i})', f'{mod.count(cmd, CHANNEL, i)}', 1)
 
                 # Substitui todos os $(random) por um número de 1 a 100.
                 while msg.find('$(random)') != -1:
@@ -190,13 +171,13 @@ async def command_join(ctx):
             pass
     if ctx.channel.name.lower() == BOT_NICK.lower():
         CONTA = f'#{AUTHOR}'
-        if CONTA in CHAN:
+        if CONTA in CHANNELS:
             await ctx.send_me(f'Bot JÁ ESTÁ no canal {AUTHOR}')
         else:
-            CHAN.append(f'#{AUTHOR}')
-            update_channel(CHAN)
-            file_check(AUTHOR)
-            await bot.join_channels(CHAN)
+            CHANNELS.append(f'#{AUTHOR}')
+            mod.update_channel(CHANNELS)
+            mod.file_check(AUTHOR)
+            await bot.join_channels(CHANNELS)
             await ctx.send_me(f'Bot ENTROU no canal {AUTHOR}')
 
 
@@ -211,9 +192,9 @@ async def command_join(ctx):
             pass
     if ctx.channel.name.lower() == BOT_NICK.lower():
         CONTA = f'#{AUTHOR}'
-        if CONTA in CHAN:
-            CHAN.remove(f'#{AUTHOR}')
-            update_channel(CHAN)
+        if CONTA in CHANNELS:
+            CHANNELS.remove(f'#{AUTHOR}')
+            mod.update_channel(CHANNELS)
             await bot.part_channels([AUTHOR])
             await ctx.send_me(F'Bot SAIU do canal {AUTHOR}')
         else:
@@ -221,48 +202,6 @@ async def command_join(ctx):
 
 # @bot.command(name='followage')
 # @bot.command(name='uptime')
-
-
-def command(input, channel, type, var=''):
-    COMMAND_FILE = str(dir_path) + f'/data/{channel}/custom_commands.json'
-    with open(COMMAND_FILE) as json_file:
-        command = json.load(json_file)
-    if type == 'get':
-        return command[f'{input}']['msg']
-    elif type == 'add':
-        command.update(input)
-    elif type == 'del':
-        boolean = command.pop(input, None)
-    elif type == 'count':
-        if var == '':
-            var = 'count'
-        try:
-            command[f'{input}']['count'][f'{var}'] += 1
-        except KeyError:
-            command[f'{input}']['count'].update({f'{var}': 1})
-    with open(COMMAND_FILE, 'w', encoding='utf-8') as json_file:
-        json.dump(command, json_file, ensure_ascii=False,
-                  indent=4, sort_keys=True)
-        if type == 'del':
-            return boolean
-        elif type == 'count':
-            return command[f'{input}'][f'{type}'][f'{var}']
-
-
-def file_check(channel):
-    try:
-        # Tenta criar pasta para o canal
-        os.mkdir(str(dir_path) + f'/data/{channel}')
-    except FileExistsError:
-        pass
-    # Checa se já existe o json. Caso não exista, cria o arquivo com os valores {}
-    JSON_FILE = str(dir_path) + f'/data/{channel}/custom_commands.json'
-    if os.path.isfile(JSON_FILE) and os.access(JSON_FILE, os.R_OK):
-        return True
-    else:
-        with io.open(os.path.join(JSON_FILE), 'w') as json_file:
-            json_file.write(json.dumps({}))
-
 
 if __name__ == "__main__":
     bot.run()
