@@ -33,7 +33,7 @@ client = Client(
     client_secret=CLIENT_SECRET
 )
 
-alias = {'cmd': ['comando', 'command', 'cmd', 'commands'],
+alias = {'cmd': ['comando', 'command', 'cmd'],
          'new': ['novo', 'new', 'add', 'adicionar', 'edit', 'editar'],
          'del': ['delete', 'apagar', 'apaga', 'del']}
 
@@ -52,22 +52,22 @@ async def event_message(ctx):
     message = ctx.content
     CHANNEL = ctx.channel.name.lower()
     if message[0] == BOT_PREFIX:
-        cmd = message.split(' ')[0][1:].lower()
-        if cmd in alias['cmd']:
+        cmds = message.split(' ')[0][1:].lower()
+        if cmds in alias['cmd']:
             if(ctx.author.is_mod) or (ctx.author == CHANNEL) or (ctx.author == '1bode'):
-                message = message.replace(f'{BOT_PREFIX}{cmd}', '').strip()
-                new = message.split()[0]
-                if new in alias['new']:
+                message = message.replace(f'{BOT_PREFIX}{cmds}', '').strip()
+                opt = message.split()[0]
+                if opt in alias['new']:
                     cmd = message.split()[1]
                     if cmd[0] == BOT_PREFIX:
                         cmd = cmd.split(' ')[0][1:]
-                    dsc = ' '.join(message.split()[2:])
                     cmd = ud(cmd.lower())
+                    dsc = ' '.join(message.split()[2:])
                     input = {cmd: {"msg": dsc, "count": {}}}
                     mod.add(input, CHANNEL)
                     await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" criado/editado com sucesso :D')
                     return
-                elif new in alias['del']:
+                elif opt in alias['del']:
                     cmd = ud(message.split()[1].lower())
                     if mod.delcmd(cmd, CHANNEL) != None:
                         await ctx.channel.send_me(f'{ctx.author.name} -> Comando "{cmd}" deletado :|')
@@ -78,7 +78,7 @@ async def event_message(ctx):
         else:
             # Procura o comando no commands.json do canal
             try:
-                cmd = ud(cmd.lower())
+                cmd = ud(cmds.lower())
                 msg = mod.get(cmd, CHANNEL)
 
                 # Substitui $(channel) pelo nome do canal
@@ -151,7 +151,7 @@ async def event_message(ctx):
                                          f'{randint(0,100)}', msg, 1)
 
                 # todo: programar ${url fetch http://API} para leagueoflegends
-                await ctx.channel.send(f'{msg}')
+                # await ctx.channel.send(f'{msg}')
             except KeyError:
                 print(
                     f'Comando "{cmd}" não foi encontrado no canal "{CHANNEL}"')
@@ -170,11 +170,10 @@ async def command_join(ctx):
         except IndexError:
             pass
     if ctx.channel.name.lower() == BOT_NICK.lower():
-        CONTA = f'#{AUTHOR}'
-        if CONTA in CHANNELS:
+        if AUTHOR in CHANNELS:
             await ctx.send_me(f'Bot JÁ ESTÁ no canal {AUTHOR}')
         else:
-            CHANNELS.append(f'#{AUTHOR}')
+            CHANNELS.append(AUTHOR)
             mod.update_channel(CHANNELS)
             mod.file_check(AUTHOR)
             await bot.join_channels(CHANNELS)
@@ -183,7 +182,7 @@ async def command_join(ctx):
 
 # Remove o bot do próprio canal ao utilizar o comando no chat do bot
 @bot.command(name='sair')
-async def command_join(ctx):
+async def command_leave(ctx):
     AUTHOR = ctx.author.name.lower()
     if AUTHOR == '1bode':
         try:
@@ -191,14 +190,20 @@ async def command_join(ctx):
         except IndexError:
             pass
     if ctx.channel.name.lower() == BOT_NICK.lower():
-        CONTA = f'#{AUTHOR}'
-        if CONTA in CHANNELS:
-            CHANNELS.remove(f'#{AUTHOR}')
+        if AUTHOR in CHANNELS:
+            CHANNELS.remove(AUTHOR)
             mod.update_channel(CHANNELS)
             await bot.part_channels([AUTHOR])
-            await ctx.send_me(F'Bot SAIU do canal {AUTHOR}')
+            await ctx.send_me(f'Bot SAIU do canal {AUTHOR}')
         else:
-            await ctx.send_me(F'Bot NÃO ESTÁ no canal {AUTHOR}')
+            await ctx.send_me(f'Bot NÃO ESTÁ no canal {AUTHOR}')
+
+# Teste de comando e tratamento de erro
+for i in list(mod.get('@all', *CHANNELS).keys()):
+    @bot.command(name=f'{i}')
+    async def command_test(ctx):
+        await ctx.send(f'{mod.get(i, *CHANNELS)}')
+        print('Passou')
 
 # @bot.command(name='followage')
 # @bot.command(name='uptime')

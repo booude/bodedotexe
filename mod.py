@@ -24,6 +24,16 @@ def update_channel(value):
         json.dump(data, json_file, sort_keys=True, indent=4)
 
 
+def get(input, channel):
+    COMMAND_FILE = str(dir_path) + f'/data/{channel}/custom_commands.json'
+    with open(COMMAND_FILE) as json_file:
+        command = json.load(json_file)
+        if input == '@all':
+            return command
+        else:
+            return command[f'{input}']['msg']
+
+
 def add(input, channel):
     COMMAND_FILE = str(dir_path) + f'/data/{channel}/custom_commands.json'
     with open(COMMAND_FILE) as json_file:
@@ -32,13 +42,6 @@ def add(input, channel):
     with open(COMMAND_FILE, 'w', encoding='utf-8') as json_file:
         json.dump(command, json_file, ensure_ascii=False,
                   indent=4, sort_keys=True)
-
-
-def get(input, channel):
-    COMMAND_FILE = str(dir_path) + f'/data/{channel}/custom_commands.json'
-    with open(COMMAND_FILE) as json_file:
-        command = json.load(json_file)
-        return command[f'{input}']['msg']
 
 
 def delcmd(input, channel):
